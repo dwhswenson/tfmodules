@@ -115,4 +115,29 @@ resource "aws_route53_record" "www_domain" {
   }
 }
 
+# AWS policy to allow CloudFront to create invalidations; attach to role
+data "aws_iam_policy_document" "cloudfront_invalidation_policy" {
+  statement {
+    actions   = ["cloudfront:CreateInvalidation"]
+    resources = [aws_cloudfront_distribution.distribution.arn]
+    effect    = "Allow"
+  }
+}
+
+resource "aws_iam_policy" "cloudfront_invalidation_policy" {
+  description = "IAM policy to allow CloudFront to create invalidations"
+  policy      = data.aws_iam_policy_document.cloudfront_invalidation_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "cloudfront_attachment" {
+  role       = var.workflow_role_name
+  policy_arn = aws_iam_policy.cloudfront_invalidation_policy.arn
+}
+
+resource "github_actions_secret" "cloudfront_distribution_id" {
+  repository = "${split("/", var.repository)[1]}"
+  secret_name = "${var.gh_secret_prefix}_CLOUDFRONT"
+  plaintext_value = aws_cloudfront_distribution.distribution.id
+}
+
 data "aws_region" "current" {}

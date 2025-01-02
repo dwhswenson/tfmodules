@@ -1,5 +1,20 @@
+variable "gh_secret_prefix" {
+  description = "Prefix for the GitHub secret"
+  type        = string
+}
+
+variable "repository" {
+  description = "GitHub repository name"
+  type        = string
+}
+
 variable "s3_bucket" {
   description = "Name of the S3 bucket"
+  type        = string
+}
+
+variable "workflow_role_name" {
+  description = "Name of the IAM role for the workflow"
   type        = string
 }
 
