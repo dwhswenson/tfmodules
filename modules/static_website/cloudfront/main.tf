@@ -1,4 +1,6 @@
 resource "aws_cloudfront_function" "redirect_function" {
+  # TODO: this should not be made if there is no domain name
+  #count   = var.domain_name != "" ? 1 : 0  # TESTING
   name    = replace("${var.domain_name}-redirects", ".", "-")
   runtime = "cloudfront-js-1.0"
   comment = "Redirect to www.${var.domain_name}"
@@ -27,10 +29,11 @@ resource "aws_cloudfront_distribution" "distribution" {
   http_version        = "http2"
   default_root_object = "index.html"
 
-  aliases = [
+  # TODO: this should not be made if there is no domain name
+  aliases = var.domain_name != "" ? [
     var.domain_name,
     "www.${var.domain_name}"
-  ]
+  ] : []  # TESTING
 
   origin {
     domain_name = "${var.s3_bucket}.s3-website.${data.aws_region.current.name}.amazonaws.com"
@@ -63,10 +66,19 @@ resource "aws_cloudfront_distribution" "distribution" {
       }
     }
 
-    function_association {
-      event_type = "viewer-request"
-      function_arn = aws_cloudfront_function.redirect_function.arn
+    # TODO: this should not be made if there is no domain name
+    dynamic "function_association" {
+      for_each = var.domain_name != "" ? [1] : []  # TESTING
+      content {
+        event_type = "viewer-request"
+        function_arn = aws_cloudfront_function.redirect_function.arn
+      }
     }
+    #function_association {
+      #count = var.domain_name != "" ? 1 : 0  # TESTING
+      #event_type = "viewer-request"
+      #function_arn = aws_cloudfront_function.redirect_function.arn
+    #}
   }
 
   custom_error_response {
@@ -84,14 +96,28 @@ resource "aws_cloudfront_distribution" "distribution" {
 
   price_class = "PriceClass_All"
 
-  viewer_certificate {
-    acm_certificate_arn      = var.certificate_arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.1_2016"
+  # if we have a certificate, use it
+  dynamic "viewer_certificate" {
+    for_each = var.certificate_arn != "" ? [1] : []  # TESTING
+    content {
+      acm_certificate_arn      = var.certificate_arn
+      ssl_support_method       = "sni-only"
+      minimum_protocol_version = "TLSv1.1_2016"
+    }
+  }
+
+  # if we don't have a certificate, use the CloudFront default
+  dynamic "viewer_certificate" {
+    for_each = var.certificate_arn == "" ? [1] : []  # TESTING
+    content {
+      cloudfront_default_certificate = true
+    }
   }
 }
 
+# TODO: this should not be made if there is no domain name
 resource "aws_route53_record" "root_domain" {
+  count  = var.domain_name != "" ? 1 : 0  # TESTING
   zone_id = var.hosted_zone_id
   name    = var.domain_name
   type    = "A"
@@ -103,7 +129,9 @@ resource "aws_route53_record" "root_domain" {
   }
 }
 
+# TODO: this should not be made if there is no domain name
 resource "aws_route53_record" "www_domain" {
+  count = var.domain_name != "" ? 1 : 0  # TESTING
   zone_id = var.hosted_zone_id
   name    = "www.${var.domain_name}"
   type    = "A"

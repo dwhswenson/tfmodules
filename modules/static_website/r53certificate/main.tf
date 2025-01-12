@@ -3,6 +3,26 @@
 # Note that this requires that the domain is managed by Route53.
 # Additionally, this certificate must be created in the us-east-1 region.
 
+# Ensure that the provider is in the us-east-1 region
+data "aws_region" "current" {}
+
+locals {
+  provider_region = data.aws_region.current.name
+  is_provider_east = local.provider_region == "us-east-1"
+}
+
+resource "null_resource" "check_region" {
+  count = local.is_provider_east ? 0 : 1
+
+  provisioner "local-exec" {
+    command = <<EOF
+echo "ERROR: The AWS Certificate Manager Certificate must be created in the us-east-1 region. Please pass a provider with the us-east-1 region."
+exit 1
+EOF
+  }
+}
+
+# Make certificate and validation for the domain
 resource "aws_acm_certificate" "certificate" {
   domain_name               = var.domain_name
   subject_alternative_names = ["www.${var.domain_name}"]
