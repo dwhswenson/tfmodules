@@ -30,4 +30,8 @@ variable "ttl" {
   default     = 300
 }
 
-
+variable "mail_cnames" {
+  description = "List of mail CNAMEs to create; these will map to the mxrouting_host"
+  type        = list(string)
+  default     = []
+}

@@ -5,8 +5,8 @@ resource "aws_route53_record" "mx_records" {
   ttl     = var.ttl
 
   records = [
-    "10 ${var.mxrouting_host}.mxrouting.com",
-    "20 ${var.mxrouting_host}-relay.mxrouting.com"
+    "10 ${var.mxrouting_host}.mxrouting.net",
+    "20 ${var.mxrouting_host}-relay.mxrouting.net"
   ]
 }
 
@@ -37,4 +37,13 @@ resource "aws_route53_record" "dmarc_record" {
   ttl     = var.ttl
 
   records = ["v=DMARC1; p=none; rua=mailto:${var.dmarc_email}; ruf=mailto:${var.dmarc_email}; fo=1"]
+}
+
+resource "aws_route53_record" "cname_for_mail" {
+  for_each = toset(var.mail_cnames)
+  zone_id  = var.hosted_zone_id
+  name     = each.key
+  type     = "CNAME"
+  ttl      = var.ttl
+  records  = ["${var.mxrouting_host}.mxrouting.net"]
 }
