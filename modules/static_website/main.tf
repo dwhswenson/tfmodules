@@ -16,6 +16,7 @@ module "bucket" {
   workflow_filter = var.workflow_filter
   repository = var.repository
   gh_secret_prefix = var.gh_secret_prefix
+  read_only_buckets = var.read_only_buckets
 }
 
 module "cloudfront" {

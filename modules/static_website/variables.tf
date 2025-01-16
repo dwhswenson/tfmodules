@@ -4,6 +4,12 @@ variable "domain_name" {
   default     = ""
 }
 
+variable "read_only_buckets" {
+  description = "List of read-only bucket names"
+  type        = list(string)
+  default     = []
+}
+
 variable "hosted_zone_id" {
   description = "The ID of the Route 53 hosted zone"
   type        = string
