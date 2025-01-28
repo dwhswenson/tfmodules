@@ -115,34 +115,6 @@ resource "aws_cloudfront_distribution" "distribution" {
   }
 }
 
-# TODO: this should not be made if there is no domain name
-resource "aws_route53_record" "root_domain" {
-  count  = var.domain_name != "" ? 1 : 0  # TESTING
-  zone_id = var.hosted_zone_id
-  name    = var.domain_name
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.distribution.domain_name
-    zone_id                = aws_cloudfront_distribution.distribution.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
-# TODO: this should not be made if there is no domain name
-resource "aws_route53_record" "www_domain" {
-  count = var.domain_name != "" ? 1 : 0  # TESTING
-  zone_id = var.hosted_zone_id
-  name    = "www.${var.domain_name}"
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.distribution.domain_name
-    zone_id                = aws_cloudfront_distribution.distribution.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
 # AWS policy to allow CloudFront to create invalidations; attach to role
 data "aws_iam_policy_document" "cloudfront_invalidation_policy" {
   statement {

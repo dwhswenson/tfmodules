@@ -28,10 +28,3 @@ variable "domain_name" {
   type        = string
   default = ""
 }
-
-variable "hosted_zone_id" {
-  description = "ID of the Route53 hosted zone"
-  type        = string
-}
-
-
