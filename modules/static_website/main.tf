@@ -1,9 +1,5 @@
-# TODO:
-# force_www from vars
-
-
 locals {
-  make_certificate = (var.domain_name != "") && (var.certificate_arn != "")
+  make_certificate = (var.domain_name != "") && (var.certificate_arn == "")
   do_dns = (var.domain_name != "") && (var.hosted_zone_id != "")
   site_aliases = (
     local.do_dns ? (var.force_www ?
