@@ -6,9 +6,10 @@ locals {
   make_certificate = (var.domain_name != "") && (var.certificate_arn != "")
   do_dns = (var.domain_name != "") && (var.hosted_zone_id != "")
   site_aliases = (
-    var.force_www && local.do_dns ?
-    ["www.${var.domain_name}", "${var.domain_name}"] :
-    ["${var.domain_name}"]
+    local.do_dns ? (var.force_www ?
+      ["www.${var.domain_name}", "${var.domain_name}"] :
+      ["${var.domain_name}"]):
+    []
   )
 }
 
@@ -44,10 +45,9 @@ module "bucket" {
 
 module "cloudfront" {
   source = "./cloudfront"
-  # TODO: domain name is now only used in the cloudfront function(name) and
-  # aliases; maybe we can pass in aliases instead?
-  # TODO: add support for force_www
-  domain_name = var.domain_name
+  #domain_name = var.domain_name
+  aliases = local.site_aliases
+  force_www = var.force_www
   workflow_role_name = module.bucket.role_name
   certificate_arn = local.certificate_arn
   s3_bucket = var.bucket_name

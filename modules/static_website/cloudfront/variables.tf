@@ -23,8 +23,19 @@ variable "certificate_arn" {
   type        = string
 }
 
-variable "domain_name" {
-  description = "Domain name for the distribution"
-  type        = string
-  default = ""
+variable "aliases" {
+  description = "List of domain aliases for the distribution"
+  type        = list(string)
 }
+
+variable "force_www" {
+  description = "Force www. prefix on the domain"
+  type        = bool
+  default     = true
+}
+
+#variable "domain_name" {
+  #description = "Domain name for the distribution"
+  #type        = string
+  #default = ""
+#}

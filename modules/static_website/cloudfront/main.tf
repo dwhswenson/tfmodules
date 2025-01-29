@@ -1,9 +1,8 @@
 resource "aws_cloudfront_function" "redirect_function" {
-  # TODO: this should not be made if there is no domain name
-  #count   = var.domain_name != "" ? 1 : 0  # TESTING
-  name    = replace("${var.domain_name}-redirects", ".", "-")
+  count   = (var.force_www && length(var.aliases) > 0) ? 1 : 0  # TESTING
+  name    = replace("${var.aliases[0]}-redirects", ".", "-")
   runtime = "cloudfront-js-1.0"
-  comment = "Redirect to www.${var.domain_name}"
+  comment = "Redirect to www version"
   code    = <<-EOF
         function handler(event) {
             var request = event.request;
@@ -29,11 +28,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   http_version        = "http2"
   default_root_object = "index.html"
 
-  # TODO: this should not be made if there is no domain name
-  aliases = var.domain_name != "" ? [
-    var.domain_name,
-    "www.${var.domain_name}"
-  ] : []  # TESTING
+  aliases = var.aliases
 
   origin {
     domain_name = "${var.s3_bucket}.s3-website.${data.aws_region.current.name}.amazonaws.com"
@@ -66,12 +61,12 @@ resource "aws_cloudfront_distribution" "distribution" {
       }
     }
 
-    # TODO: this should not be made if there is no domain name
+    # TODO: base this off of 
     dynamic "function_association" {
-      for_each = var.domain_name != "" ? [1] : []  # TESTING
+      for_each = (var.force_www && length(var.aliases) > 0) ? [1] : []  # TESTING
       content {
         event_type = "viewer-request"
-        function_arn = aws_cloudfront_function.redirect_function.arn
+        function_arn = aws_cloudfront_function.redirect_function[0].arn
       }
     }
     #function_association {
