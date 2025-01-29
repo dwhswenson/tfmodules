@@ -39,3 +39,15 @@ variable "gh_secret_prefix" {
   description = "The prefix for the GitHub secret"
   type        = string
 }
+
+variable "force_www" {
+  description = "Whether to force www or not"
+  type        = bool
+  default     = true
+}
+
+variable "certificate_arn" {
+  description = "The ARN of the ACM certificate"
+  type        = string
+  default     = ""
+}

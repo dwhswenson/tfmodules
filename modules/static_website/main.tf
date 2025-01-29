@@ -1,15 +1,19 @@
 # TODO:
-# make_certificate = var.domain_name != "" and var.certificate_arn != ""
-# do_dns = var.domain_name != "" and var.hosted_zone_id != ""
 # force_www from vars
 
-#locals {
-  #make_certificate = (var.domain_name != "") && (var.certificate_arn != "")
-  #do_dns = (var.domain_name != "") && (var.hosted_zone_id != "")
-#}
+
+locals {
+  make_certificate = (var.domain_name != "") && (var.certificate_arn != "")
+  do_dns = (var.domain_name != "") && (var.hosted_zone_id != "")
+  site_aliases = (
+    var.force_www && local.do_dns ?
+    ["www.${var.domain_name}", "${var.domain_name}"] :
+    ["${var.domain_name}"]
+  )
+}
 
 module "certificate" {
-  count = var.domain_name != "" ? 1 : 0
+  count = local.make_certificate ? 1 : 0
   source = "./r53certificate"
   domain_name = var.domain_name
   hosted_zone_id = var.hosted_zone_id
@@ -18,12 +22,15 @@ module "certificate" {
   }
 }
 
-#locals {
-  #certificate_arn = (
-    #length(module.certificate) > 0 ? module.certificate[0].certificate_arn : 
-    #(var.certificate_arn != "" ? var.certificate_arn : "")
-  #)
-#}
+# in order of preference: newly-created certificate, passed-in certificate,
+# none (use cloudfront's default) -- newly-created only exists if nothing
+# was passed in
+locals {
+  certificate_arn = (
+    length(module.certificate) > 0 ? module.certificate[0].certificate_arn :
+    (var.certificate_arn != "" ? var.certificate_arn : "")
+  )
+}
 
 module "bucket" {
   source = "./bucket_and_role"
@@ -37,17 +44,19 @@ module "bucket" {
 
 module "cloudfront" {
   source = "./cloudfront"
-  domain_name = var.domain_name  # now only used in function association and to force aliases
+  # TODO: domain name is now only used in the cloudfront function(name) and
+  # aliases; maybe we can pass in aliases instead?
+  # TODO: add support for force_www
+  domain_name = var.domain_name
   workflow_role_name = module.bucket.role_name
-  certificate_arn = length(module.certificate) > 0 ? module.certificate[0].certificate_arn : ""
+  certificate_arn = local.certificate_arn
   s3_bucket = var.bucket_name
-  #hosted_zone_id = var.hosted_zone_id
   repository = var.repository
   gh_secret_prefix = var.gh_secret_prefix
 }
 
 module "dns" {
-  count = var.domain_name != "" ? 1 : 0
+  count = local.do_dns ? 1 : 0
   source = "./dns"
   domain_names = [
     var.domain_name,
