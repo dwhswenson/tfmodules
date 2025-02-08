@@ -54,10 +54,7 @@ module "cloudfront" {
 module "dns" {
   count = local.do_dns ? 1 : 0
   source = "./dns"
-  domain_names = [
-    var.domain_name,
-    "www.${var.domain_name}"
-  ]
+  domain_names = local.site_aliases
   cloudfront_distribution_name = module.cloudfront.distribution_name
   cloudfront_distribution_hosted_zone = module.cloudfront.distribution_hosted_zone
   hosted_zone_id = var.hosted_zone_id
